@@ -1,0 +1,1089 @@
+/* ============================================================
+   Life Design
+   サウジアラビア／日本のページ切り替え＋本日のアクション。
+   タイルを押すと該当ページへ画面全体が切り替わる。
+   表示ページ（room / tasks）と入力ページ（room-edit / task-add）を分離。
+   共通のタスク管理表（life-dashboard-tasks）を各ページが参照する。
+   ============================================================ */
+
+:root {
+  --green:  #2E7D32;
+  --purple: #6A1B9A;
+  --orange: #EF6C00;
+
+  --paper:      #F7F6F3;
+  --paper-deep: #EDEBE6;
+  --card:       #FFFFFF;
+  --ink:        #1B1D21;
+  --ink-soft:   #5E636B;
+  --ink-faint:  #9AA0A8;
+  --hairline:   #E4E2DC;
+
+  --shadow-rest: 0 1px 2px rgba(27, 29, 33, .05), 0 8px 24px -12px rgba(27, 29, 33, .12);
+  --shadow-lift: 0 2px 4px rgba(27, 29, 33, .06), 0 18px 40px -16px rgba(27, 29, 33, .22);
+
+  --radius:    18px;
+  --radius-sm: 11px;
+
+  --font-display: "Bricolage Grotesque", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body: "Noto Sans JP", "Hiragino Sans", system-ui, sans-serif;
+
+  --ease: cubic-bezier(.2, .7, .3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green:  #6FCB74;
+    --purple: #C58CE6;
+    --orange: #FFA94D;
+
+    --paper:      #15171B;
+    --paper-deep: #0F1115;
+    --card:       #1D2026;
+    --ink:        #ECEAE4;
+    --ink-soft:   #A7ADB6;
+    --ink-faint:  #6E757F;
+    --hairline:   #2C3038;
+
+    --shadow-rest: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px -14px rgba(0, 0, 0, .6);
+    --shadow-lift: 0 2px 6px rgba(0, 0, 0, .45), 0 22px 46px -18px rgba(0, 0, 0, .75);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(60rem 30rem at 12% -8%, color-mix(in oklab, var(--green) 14%, transparent), transparent 70%),
+    radial-gradient(52rem 28rem at 92% -4%, color-mix(in oklab, var(--purple) 13%, transparent), transparent 70%),
+    radial-gradient(70rem 36rem at 50% 118%, color-mix(in oklab, var(--orange) 11%, transparent), transparent 72%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) { .grain { mix-blend-mode: screen; opacity: .05; } }
+
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: clamp(1.75rem, 5vw, 4.5rem) clamp(1.1rem, 4vw, 2.5rem) 4rem;
+}
+
+/* ---------- Masthead ---------- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
+  padding-bottom: clamp(1.5rem, 3.5vw, 2.5rem);
+  margin-bottom: clamp(1.5rem, 3.5vw, 2.25rem);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.masthead h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 7vw, 3.35rem);
+  font-weight: 700;
+  line-height: .96;
+  letter-spacing: -.025em;
+}
+.masthead h1 em { font-style: normal; font-weight: 400; color: var(--ink-soft); }
+
+.masthead__right {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(.6rem, 2vw, 1rem);
+}
+
+.clocks {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-right: clamp(.4rem, 1.5vw, .9rem);
+}
+
+.clock {
+  display: grid;
+  gap: .18rem;
+  padding-left: .85rem;
+  border-left: 2px solid color-mix(in oklab, var(--green) 55%, transparent);
+}
+.clock--jp { border-left-color: color-mix(in oklab, var(--purple) 55%, transparent); }
+
+.clock__place { display: flex; align-items: baseline; gap: .4rem; font-size: .76rem; font-weight: 500; color: var(--ink-soft); }
+.clock__code { font-family: var(--font-display); font-size: .62rem; letter-spacing: .1em; color: var(--ink-faint); }
+.clock__time { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.clock__date { font-size: .7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+/* ---------- ヘッダーのボタン類 ---------- */
+
+.header-actions {
+  display: flex;
+  gap: .4rem;
+}
+
+.header-btn {
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  color: var(--ink-soft);
+  cursor: pointer;
+  box-shadow: var(--shadow-rest);
+  transition: color .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+.header-btn:hover { color: var(--ink); box-shadow: var(--shadow-lift); }
+
+.header-btn--label {
+  padding: .5rem .8rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: .76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.region-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .15rem;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  color: var(--ink-soft);
+  padding: .55rem .6rem .45rem;
+  border-radius: 999px;
+  box-shadow: var(--shadow-rest);
+  cursor: pointer;
+  transition: color .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+.region-toggle:hover { color: var(--ink); box-shadow: var(--shadow-lift); }
+.region-toggle__icon {
+  width: 18px; height: 18px;
+  transform: rotate(calc(var(--turns, 0) * 1turn));
+  transition: transform .6s var(--ease);
+}
+.region-toggle__code { font-family: var(--font-display); font-size: .62rem; font-weight: 700; letter-spacing: .1em; }
+
+/* ---------- Board ＆ 画面（screen）の出し分け ---------- */
+
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(.9rem, 2.2vw, 1.25rem);
+}
+
+/* 「国」の画面：選ばれていない方の国カードを隠す */
+.board[data-view="saudi"] .card--japan,
+.board[data-view="japan"] .card--saudi {
+  display: none;
+}
+
+/* 各ページは、対応する画面の時だけ表示。
+   「.board > .xxx」で .card の display:flex より確実に強く効かせる。 */
+.board > .room-page,
+.board > .room-edit-page,
+.board > .item-detail-page,
+.board > .task-add-page,
+.board > .task-detail-page,
+.board > .tasks-page {
+  display: none;
+}
+.board[data-screen="room"]        > .room-page        { display: flex; }
+.board[data-screen="room-edit"]   > .room-edit-page   { display: flex; }
+.board[data-screen="item-detail"] > .item-detail-page { display: flex; }
+.board[data-screen="task-add"]    > .task-add-page    { display: flex; }
+.board[data-screen="task-detail"] > .task-detail-page { display: flex; }
+.board[data-screen="tasks"]       > .tasks-page       { display: flex; }
+
+/* ページ画面のときは、国カード（タイル一覧）とクイックメモカードを隠す（国の画面以外すべて） */
+.board:not([data-screen="country"]) > .card--saudi,
+.board:not([data-screen="country"]) > .card--japan,
+.board:not([data-screen="country"]) > .card--quickmemo {
+  display: none;
+}
+
+/* タスク追加／全タスク／部屋／部屋編集の画面では Today's Action は表示しない（国の画面だけ） */
+.board:not([data-screen="country"]) > .card--action {
+  display: none;
+}
+
+.card--saudi.is-swapping,
+.card--japan.is-swapping,
+.page.is-entering {
+  animation: rise .5s var(--ease) both;
+}
+
+/* ---------- Card ---------- */
+
+.card {
+  --accent: var(--ink-soft);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  padding: clamp(1.2rem, 2.6vw, 1.6rem);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--card);
+  background-image: linear-gradient(to bottom, color-mix(in oklab, var(--accent) 9%, var(--card)) 0%, var(--card) 38%);
+  box-shadow: var(--shadow-rest);
+  overflow: hidden;
+  animation: rise .6s var(--ease) both;
+  animation-delay: calc(var(--reveal, 0) * 80ms);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(to right, var(--accent), color-mix(in oklab, var(--accent) 35%, transparent));
+}
+
+.card--saudi  { --accent: var(--green); }
+.card--japan  { --accent: var(--purple); }
+.card--action { --accent: var(--orange); }
+
+.card__head { display: flex; align-items: center; gap: .7rem; }
+.card__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 15%, var(--card));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 32%, transparent);
+}
+.badge--icon svg { width: .95rem; height: .95rem; fill: currentColor; }
+
+/* ---------- Tiles（ページへの入り口） ---------- */
+
+.tiles { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  padding: .8rem .95rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: .93rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .22s var(--ease), border-color .22s var(--ease), box-shadow .22s var(--ease), color .22s var(--ease);
+}
+.tile__label { font-weight: 600; line-height: 1.4; }
+
+.tile--preview { align-items: center; }
+.tile__preview { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.tile__preview-lines {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--orange);
+}
+.tile__preview-lines:empty::before {
+  content: "タスクはまだありません";
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+.tile__preview-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile__end { display: flex; align-items: center; gap: .55rem; flex: 0 0 auto; }
+.tile__count {
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: .16rem .42rem;
+  border-radius: 999px;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, var(--card));
+}
+.chev { width: .8rem; height: .8rem; color: var(--ink-faint); transition: transform .22s var(--ease), color .22s var(--ease); }
+
+@media (hover: hover) {
+  .tile:hover { transform: translateY(-2px); border-color: color-mix(in oklab, var(--accent) 45%, var(--hairline)); box-shadow: var(--shadow-lift); color: var(--accent); }
+  .tile:hover .chev { color: var(--accent); transform: translateX(3px); }
+}
+.tile:active { transform: translateY(0) scale(.994); }
+.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- ピン留めの見出し・並び替え・もっと見るリンク ---------- */
+
+.quickpin__heading,
+.area-tasks__heading,
+.page__tasks-heading,
+.task-group__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin: 0;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.quickpin__heading-sub {
+  margin-left: .5rem;
+  font-size: .74rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+.pin-sort {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+.pin-sort select {
+  padding: .25rem .5rem;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: .72rem;
+}
+
+.page-link {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-top: -.3rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.page-link:hover { text-decoration: underline; }
+
+/* ---------- Quick add フォーム（タスク追加ページのみで使用） ---------- */
+
+.quickpin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.quickpin--row { flex-wrap: nowrap; }
+
+.quick-inline {
+  display: flex;
+  gap: .5rem;
+}
+.quick-inline__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .65rem .9rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: .88rem;
+}
+.quick-inline__input::placeholder { color: var(--ink-faint); }
+.quick-inline__input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.quick-inline__send {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .2s var(--ease), transform .2s var(--ease);
+}
+.quick-inline__send:hover { filter: brightness(1.08); }
+.quick-inline__send:active { transform: scale(.95); }
+.quickpin--stack { flex-direction: column; align-items: stretch; }
+
+.quickpin__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .65rem .9rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: .88rem;
+}
+.quickpin__input::placeholder { color: var(--ink-faint); }
+.quickpin__input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.quickpin__select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .65rem .7rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: .84rem;
+}
+.quickpin__select:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.quickpin__add {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .2s var(--ease), transform .2s var(--ease);
+}
+.quickpin__add--wide { width: 100%; font-size: .9rem; font-weight: 600; padding: .7rem; }
+.quickpin__add:hover { filter: brightness(1.08); }
+.quickpin__add:active { transform: scale(.95); }
+
+/* ---------- タスクリスト（チェック・本文・出どころ・期限・ピン・削除） ---------- */
+
+.tasklist { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.tasklist__empty { margin: 0; padding: .5rem .1rem; font-size: .8rem; color: var(--ink-faint); }
+
+.tasklist__item {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .55rem .7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-size: .85rem;
+  color: var(--ink);
+  cursor: pointer;
+  animation: rise .3s var(--ease) both;
+  transition: opacity .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+.tasklist__item.is-done { opacity: .6; }
+@media (hover: hover) {
+  .tasklist__item:hover { box-shadow: var(--shadow-lift); border-color: color-mix(in oklab, var(--accent) 40%, var(--hairline)); }
+}
+
+.tasklist__check {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 1.5px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--card);
+  color: transparent;
+  font-size: .72rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease);
+}
+.tasklist__check::after { content: "\2713"; }
+.tasklist__check[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.tasklist__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+
+.tasklist__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+
+.tasklist__room {
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .1rem .4rem;
+  border-radius: 999px;
+  color: var(--room-accent, var(--ink-faint));
+  background: color-mix(in oklab, var(--room-accent, var(--ink-faint)) 15%, var(--card));
+}
+.tasklist__room--saudi { --room-accent: var(--green); }
+.tasklist__room--japan { --room-accent: var(--purple); }
+
+.tasklist__due,
+.tasklist__due-slot {
+  flex: 0 0 auto;
+  font-size: .74rem;
+  font-weight: 800;
+  padding: .3rem .6rem;
+  border-radius: 999px;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 18%, var(--card));
+  white-space: nowrap;
+}
+.tasklist__due.is-overdue,
+.tasklist__due.is-today,
+.tasklist__due-slot.is-overdue,
+.tasklist__due-slot.is-today {
+  color: #fff;
+  background: var(--orange);
+}
+
+.tasklist__related {
+  font-size: .64rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tasklist__link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-faint);
+}
+.tasklist__link svg { width: .75rem; height: .75rem; }
+.tasklist__link:hover { color: var(--accent); }
+
+.tasklist__item.is-urgent { border-left: 3px solid var(--orange); }
+
+.tasklist__text { font-size: 1rem; font-weight: 700; line-height: 1.4; word-break: break-word; }
+.tasklist__item.is-done .tasklist__text { text-decoration: line-through; color: var(--ink-faint); }
+
+.tasklist__actions { flex: 0 0 auto; display: flex; align-items: center; gap: .1rem; }
+
+.tasklist__pin {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color .2s var(--ease), background .2s var(--ease);
+}
+.tasklist__pin svg { width: .85rem; height: .85rem; }
+.tasklist__pin:hover { color: var(--accent); background: color-mix(in oklab, var(--accent) 12%, transparent); }
+.tasklist__pin.is-pinned { color: var(--accent); }
+
+.tasklist__editbtn {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: .85rem;
+  cursor: pointer;
+  transition: color .2s var(--ease), background .2s var(--ease);
+}
+.tasklist__editbtn:hover { color: var(--accent); background: color-mix(in oklab, var(--accent) 12%, transparent); }
+
+.tasklist__remove {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: .1rem .35rem;
+  transition: color .2s var(--ease);
+}
+.tasklist__remove:hover { color: var(--accent); }
+
+/* ---------- 全タスクページ：検索とグループ見出し ---------- */
+
+.tasks-search {
+  width: 100%;
+  padding: .7rem .9rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: .88rem;
+}
+.tasks-search::placeholder { color: var(--ink-faint); }
+.tasks-search:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.task-group { display: flex; flex-direction: column; gap: .4rem; }
+.task-group[hidden] { display: none; }
+
+.item-list__row--link-row {
+  cursor: pointer;
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease);
+}
+.item-list__row--link-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+
+/* ---------- Page（部屋表示／部屋編集／タスク追加／全タスク 共通） ---------- */
+
+.page { gap: .3rem; }
+
+.page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  align-self: flex-start;
+  margin-bottom: .3rem;
+  border: 0;
+  background: transparent;
+  padding: .2rem 0;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color .2s var(--ease);
+}
+.page__back:hover { color: var(--accent); }
+.chev--back { transform: rotate(180deg); }
+
+.page__breadcrumb {
+  margin: 0;
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.page__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-bottom: .3rem;
+}
+
+.page__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.page__edit {
+  flex: 0 0 auto;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  color: var(--ink-soft);
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.page__edit:hover { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, var(--hairline)); }
+
+.page__content-view {
+  padding: .9rem 1rem;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent) 5%, var(--card));
+  color: var(--ink);
+  font-size: .9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.page__content-view.is-empty { color: var(--ink-faint); font-style: normal; }
+
+/* ---------- 項目リスト（部屋ページ・クイックメモ：表示） ---------- */
+
+.item-list { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.item-list__empty { margin: 0; padding: .5rem .1rem; font-size: .85rem; color: var(--ink-faint); }
+
+.item-list__row {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .7rem .85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-size: .88rem;
+  line-height: 1.55;
+  cursor: pointer;
+  transition: box-shadow .18s var(--ease), border-color .18s var(--ease);
+  animation: rise .3s var(--ease) both;
+}
+@media (hover: hover) {
+  .item-list__row:hover { box-shadow: var(--shadow-lift); border-color: color-mix(in oklab, var(--accent) 40%, var(--hairline)); }
+}
+.item-list__row::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px; height: 6px;
+  margin-top: .6rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.item-list__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+.item-list__title { font-size: 1rem; font-weight: 700; word-break: break-word; }
+.item-list__notes { font-size: .84rem; line-height: 1.6; color: var(--ink-soft); word-break: break-word; white-space: pre-wrap; }
+.item-list__timestamp { font-size: .66rem; color: var(--ink-faint); }
+
+.item-list__attachments {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .3rem;
+}
+.item-list__link {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.item-list__link svg { width: .8rem; height: .8rem; }
+.item-list__link:hover { text-decoration: underline; }
+
+.item-list__thumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--hairline);
+}
+
+.item-list__row--link-row { cursor: pointer; transition: transform .18s var(--ease), box-shadow .18s var(--ease); }
+.item-list__row--link-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+
+/* ---------- 項目の追加・編集ページ ---------- */
+
+.file-field {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem .9rem;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: .82rem;
+  cursor: pointer;
+}
+.file-field__icon { width: .95rem; height: .95rem; flex: 0 0 auto; }
+.file-field input[type="file"] {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.page__hint--warn { color: var(--orange); }
+
+.item-edit-list { display: flex; flex-direction: column; gap: .5rem; margin-top: .3rem; padding-top: 1.1rem; border-top: 1px dashed var(--hairline); }
+.item-edit-list ul { display: grid; gap: .6rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+
+.item-edit-card {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  padding: .75rem .85rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+.item-edit-row__text,
+.item-edit-row__notes,
+.item-edit-row__url {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: .4rem .55rem;
+  background: color-mix(in oklab, var(--accent) 4%, transparent);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+.item-edit-row__text { font-size: .88rem; font-weight: 600; }
+.item-edit-row__notes { font-size: .8rem; color: var(--ink-soft); min-height: 2.6rem; }
+.item-edit-row__url { font-size: .78rem; color: var(--ink-soft); }
+.item-edit-row__text:focus,
+.item-edit-row__notes:focus,
+.item-edit-row__url:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--hairline));
+  background: color-mix(in oklab, var(--accent) 8%, var(--card));
+}
+.item-edit-row__text::placeholder,
+.item-edit-row__notes::placeholder,
+.item-edit-row__url::placeholder { color: var(--ink-faint); }
+
+.item-edit-row__attachment {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  font-size: .76rem;
+  color: var(--ink-soft);
+}
+.item-edit-row__attachment-remove {
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: .78rem;
+  text-decoration: underline;
+}
+
+.item-edit-row__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: .1rem;
+}
+.item-edit-row__timestamp { font-size: .66rem; color: var(--ink-faint); }
+
+/* ---------- クイックメモカードのボタン列 ---------- */
+
+.card__actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+}
+.card__actions-row--end { justify-content: flex-end; }
+
+/* ---------- エリアの（国ごとの）タスクまとめ ---------- */
+
+.area-tasks {
+  margin-top: .3rem;
+  padding-top: 1.1rem;
+  border-top: 1px dashed var(--hairline);
+}
+
+.page__content {
+  width: 100%;
+  min-height: 10rem;
+  padding: .85rem .95rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: .9rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+.page__content::placeholder { color: var(--ink-faint); }
+.page__content:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.page__tasks { margin-top: .5rem; padding-top: 1.15rem; border-top: 1px dashed var(--hairline); }
+
+.page__hint { margin: 0; font-size: .78rem; color: var(--accent); font-weight: 600; }
+
+/* ---------- データのバックアップ ---------- */
+
+.backup {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .3rem;
+  padding-top: 1.1rem;
+  border-top: 1px dashed var(--hairline);
+}
+.backup__hint { margin: 0; font-size: .8rem; color: var(--ink-faint); line-height: 1.6; }
+.backup__row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.backup__import-label { position: relative; cursor: pointer; }
+.backup__import-label input[type="file"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer;
+}
+
+/* ---------- 詳細ページ（項目・タスク） ---------- */
+
+.detail__notes {
+  margin: 0;
+  padding: .9rem 1.05rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: color-mix(in oklab, var(--accent) 6%, var(--card));
+  font-size: .92rem;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detail__resource-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+.detail__attachment { display: contents; }
+.detail__attachment-image {
+  display: block;
+  max-width: 100%;
+  max-height: 16rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  object-fit: contain;
+  margin-bottom: .5rem;
+  flex-basis: 100%;
+}
+
+.detail__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem .95rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--hairline));
+  background: color-mix(in oklab, var(--accent) 12%, var(--card));
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .18s var(--ease), box-shadow .18s var(--ease);
+}
+.detail__chip svg { width: .82rem; height: .82rem; }
+.detail__chip:hover { background: color-mix(in oklab, var(--accent) 20%, var(--card)); box-shadow: var(--shadow-rest); }
+
+.detail__chip--toggle { color: var(--ink-soft); border-color: var(--hairline); background: var(--card); }
+.detail__chip-check {
+  width: .95rem; height: .95rem;
+  border-radius: 4px;
+  border: 1.5px solid var(--hairline);
+  display: inline-block;
+}
+.detail__chip--toggle[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.detail__chip--toggle[aria-pressed="true"] .detail__chip-check {
+  background: #fff;
+  border-color: #fff;
+}
+
+.danger-link {
+  align-self: flex-start;
+  margin-top: .6rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.danger-link:hover { color: var(--orange); }
+
+.detail__due-badge {
+  flex: 0 0 auto;
+  font-size: .78rem;
+  font-weight: 800;
+  padding: .3rem .65rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--accent);
+}
+.detail__due-badge:empty { display: none; }
+.detail__due-badge.is-overdue,
+.detail__due-badge.is-today { background: var(--orange); }
+
+.detail__meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+
+/* ---------- Motion ---------- */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .tile:hover { transform: none; }
+}
