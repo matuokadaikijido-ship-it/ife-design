@@ -26,17 +26,18 @@ async function authedFetch(url, options = {}) {
 
 function taskToEventBody(task) {
   const summary = task.text;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   if (task.due_time) {
     const start = `${task.due_date}T${task.due_time.slice(0, 8)}`;
     const end = addMinutesToTime(task.due_date, task.due_time, 30);
     return {
       summary,
       description: task.url || undefined,
-      start: { dateTime: start },
-      end: { dateTime: end },
+      start: { dateTime: start, timeZone },
+      end: { dateTime: end, timeZone },
     };
   }
-  // 時刻未指定なら終日予定にする
+  // 時刻未指定なら終日予定にする（終日予定はtimeZone不要）
   return {
     summary,
     description: task.url || undefined,
