@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRegion } from "./RegionProvider";
-import { signInWithGoogle, captureTokensFromSession, isGoogleConnected, disconnectGoogle } from "@/lib/googleAuth";
+import { signInWithGoogle, captureTokensFromSession, watchGoogleAuthState, isGoogleConnected, disconnectGoogle } from "@/lib/googleAuth";
 
 function useClock(timeZone) {
   const [now, setNow] = useState(null);
@@ -30,6 +30,8 @@ export default function Header() {
 
   useEffect(() => {
     captureTokensFromSession().then(() => setConnected(isGoogleConnected()));
+    const unwatch = watchGoogleAuthState(() => setConnected(true));
+    return unwatch;
   }, []);
 
   return (
