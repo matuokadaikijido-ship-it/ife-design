@@ -62,7 +62,7 @@ export default function Header() {
 
         <div className="header-actions">
           <Link href="/tasks/add" className="header-btn header-btn--label">
-            ＋ 追加
+            ＋ 予定・タスク
           </Link>
           <Link href="/tasks" className="header-btn header-btn--label">
             全タスク

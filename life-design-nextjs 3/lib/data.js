@@ -18,6 +18,7 @@ export async function createTask(fields) {
     .from("tasks")
     .insert({
       text: fields.text,
+      kind: fields.kind || "task",
       room_id: fields.roomId || null,
       related_item_id: fields.relatedItemId || null,
       due_date: fields.dueDate,
@@ -29,7 +30,7 @@ export async function createTask(fields) {
     .single();
   if (error) throw error;
 
-  if (isGoogleConnected() && data.due_date) {
+  if (isGoogleConnected() && data.kind === "event" && data.due_date) {
     const googleEventId = await createCalendarEvent(data);
     if (googleEventId) {
       await supabase.from("tasks").update({ google_event_id: googleEventId }).eq("id", data.id);
@@ -49,7 +50,7 @@ export async function updateTaskFields(id, patch) {
   if (error) throw error;
 
   if (isGoogleConnected()) {
-    if (data.due_date) {
+    if (data.kind === "event" && data.due_date) {
       if (data.google_event_id) {
         await updateCalendarEvent(data.google_event_id, data);
       } else {
@@ -60,6 +61,7 @@ export async function updateTaskFields(id, patch) {
         }
       }
     } else if (data.google_event_id) {
+      // タスクに変わった／期限が消えた場合は、カレンダー側の予定を消す
       await deleteCalendarEvent(data.google_event_id);
       await supabase.from("tasks").update({ google_event_id: null }).eq("id", data.id);
       data.google_event_id = null;

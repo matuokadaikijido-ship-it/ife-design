@@ -13,11 +13,14 @@ export default function TaskAddPage() {
   );
 }
 
+const KIND_LABEL = { event: "予定", task: "タスク" };
+
 function TaskAddForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
+  const [kind, setKind] = useState("event");
   const [text, setText] = useState("");
   const [roomId, setRoomId] = useState("");
   const [relatedItemId, setRelatedItemId] = useState("");
@@ -32,6 +35,7 @@ function TaskAddForm() {
     fetchTasks().then((tasks) => {
       const task = tasks.find((t) => t.id === editId);
       if (!task) return;
+      setKind(task.kind || "event");
       setText(task.text);
       setRoomId(task.room_id || "");
       setRelatedItemId(task.related_item_id || "");
@@ -51,19 +55,23 @@ function TaskAddForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!text.trim() || !dueDate) return;
+    if (!text.trim()) return;
+    if (kind === "event" && !dueDate) return;
+
     const fields = {
       text: text.trim(),
+      kind,
       roomId: roomId || null,
       relatedItemId: relatedItemId || null,
-      dueDate,
-      dueTime: dueTime || null,
+      dueDate: dueDate || null,
+      dueTime: kind === "event" ? dueTime || null : null,
       url: url.trim(),
     };
 
     if (editId) {
       await updateTaskFields(editId, {
         text: fields.text,
+        kind: fields.kind,
         room_id: fields.roomId,
         related_item_id: fields.relatedItemId,
         due_date: fields.dueDate,
@@ -76,12 +84,13 @@ function TaskAddForm() {
       setText("");
       setUrl("");
       setDueTime("");
-      setFeedback(`「${fields.text}」を追加しました。`);
+      setFeedback(`「${fields.text}」を${KIND_LABEL[kind]}として追加しました。`);
     }
   }
 
   const saudiRooms = roomsByCountry("saudi");
   const japanRooms = roomsByCountry("japan");
+  const title = editId ? `${KIND_LABEL[kind]}を編集` : `${KIND_LABEL[kind]}を追加`;
 
   return (
     <main className="board" data-screen="task-add">
@@ -92,13 +101,30 @@ function TaskAddForm() {
           </svg>
           戻る
         </button>
-        <h2 className="page__title">{editId ? "タスクを編集" : "タスクを追加"}</h2>
+        <h2 className="page__title">{title}</h2>
+
+        <div className="kind-toggle" role="group" aria-label="予定かタスクか">
+          <button
+            type="button"
+            className={"kind-toggle__btn" + (kind === "event" ? " is-active" : "")}
+            onClick={() => setKind("event")}
+          >
+            予定<span className="kind-toggle__hint">Googleカレンダーに同期</span>
+          </button>
+          <button
+            type="button"
+            className={"kind-toggle__btn" + (kind === "task" ? " is-active" : "")}
+            onClick={() => setKind("task")}
+          >
+            タスク<span className="kind-toggle__hint">同期しない・todoだけ</span>
+          </button>
+        </div>
 
         <form className="quickpin quickpin--stack" onSubmit={handleSubmit}>
           <input
             type="text"
             className="quickpin__input"
-            placeholder="タスク名"
+            placeholder={kind === "event" ? "予定名" : "タスク名"}
             maxLength={140}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -131,8 +157,17 @@ function TaskAddForm() {
             </select>
           )}
           <div className="quickpin quickpin--row">
-            <input type="date" className="quickpin__input" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
-            <input type="time" className="quickpin__input" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+            <input
+              type="date"
+              className="quickpin__input"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              placeholder={kind === "task" ? "期限（任意）" : undefined}
+              required={kind === "event"}
+            />
+            {kind === "event" && (
+              <input type="time" className="quickpin__input" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+            )}
           </div>
           <input
             type="url"
@@ -142,7 +177,7 @@ function TaskAddForm() {
             onChange={(e) => setUrl(e.target.value)}
           />
           <button type="submit" className="quickpin__add quickpin__add--wide">
-            {editId ? "更新する" : "追加する"}
+            {editId ? "更新する" : `${KIND_LABEL[kind]}を追加する`}
           </button>
         </form>
         {feedback && <p className="page__hint">{feedback}</p>}

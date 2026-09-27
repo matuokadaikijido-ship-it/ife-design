@@ -78,6 +78,11 @@ export default function TaskList({
               {(showRoomBadge || task.related_item_id || task.url) && (
                 <span className="tasklist__meta">
                   {showRoomBadge && (
+                    <span className={"tasklist__kind" + (task.kind === "event" ? " is-event" : "")}>
+                      {task.kind === "event" ? "予定" : "タスク"}
+                    </span>
+                  )}
+                  {showRoomBadge && (
                     <span className={`tasklist__room${roomMeta ? " tasklist__room--" + roomMeta.country : ""}`}>
                       {roomMeta ? roomMeta.label : "未分類"}
                     </span>

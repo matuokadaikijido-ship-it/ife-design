@@ -149,14 +149,17 @@ body {
 }
 
 .header-btn {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--hairline);
   background: var(--card);
   color: var(--ink-soft);
   cursor: pointer;
+  text-decoration: none;
   box-shadow: var(--shadow-rest);
   transition: color .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
 }
-.header-btn:hover { color: var(--ink); box-shadow: var(--shadow-lift); }
+.header-btn:hover { color: var(--ink); box-shadow: var(--shadow-lift); text-decoration: none; }
 
 .header-btn--label {
   padding: .5rem .8rem;
@@ -572,6 +575,20 @@ body {
 .tasklist__room--saudi { --room-accent: var(--green); }
 .tasklist__room--japan { --room-accent: var(--purple); }
 
+.tasklist__kind {
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .1rem .4rem;
+  border-radius: 999px;
+  color: var(--ink-faint);
+  background: color-mix(in oklab, var(--ink-faint) 12%, var(--card));
+}
+.tasklist__kind.is-event {
+  color: var(--purple);
+  background: color-mix(in oklab, var(--purple) 15%, var(--card));
+}
+
 .tasklist__due,
 .tasklist__due-slot {
   flex: 0 0 auto;
@@ -955,6 +972,42 @@ body {
 .page__tasks { margin-top: .5rem; padding-top: 1.15rem; border-top: 1px dashed var(--hairline); }
 
 .page__hint { margin: 0; font-size: .78rem; color: var(--accent); font-weight: 600; }
+
+/* ---------- 予定／タスクの切り替えトグル ---------- */
+
+.kind-toggle {
+  display: flex;
+  gap: .5rem;
+  margin: .2rem 0 .3rem;
+}
+.kind-toggle__btn {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .15rem;
+  padding: .65rem .85rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .2s var(--ease), background .2s var(--ease), color .2s var(--ease);
+}
+.kind-toggle__hint {
+  font-size: .68rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+.kind-toggle__btn.is-active {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--card));
+  color: var(--accent);
+}
+.kind-toggle__btn.is-active .kind-toggle__hint { color: color-mix(in oklab, var(--accent) 70%, var(--ink-soft)); }
 
 /* ---------- データのバックアップ ---------- */
 
