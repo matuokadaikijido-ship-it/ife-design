@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROOMS, COUNTRY_LABEL, COUNTRY_ACCENT } from "@/lib/rooms";
 import { createRoomItem, updateRoomItem, deleteRoomItem, fetchRoomItems } from "@/lib/data";
+import { useDraft, clearDraft } from "@/lib/useDraft";
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // Supabase Storage なので余裕を持って5MBまで
 
@@ -42,6 +43,18 @@ function RoomItemAddForm({ roomId }) {
     });
   }, [editId, roomId]);
 
+  const DRAFT_KEY = `life-design-draft-room-item:${roomId}`;
+  useDraft(
+    DRAFT_KEY,
+    { title, notes, url },
+    (draft) => {
+      if (draft.title) setTitle(draft.title);
+      if (draft.notes) setNotes(draft.notes);
+      if (draft.url) setUrl(draft.url);
+    },
+    { skip: !!editId }
+  );
+
   if (!meta) return <p>ページが見つかりません。</p>;
 
   async function handleSubmit(e) {
@@ -62,6 +75,7 @@ function RoomItemAddForm({ roomId }) {
         setNotes("");
         setUrl("");
         setFile(null);
+        clearDraft(DRAFT_KEY);
         router.refresh();
       }
     } catch (err) {

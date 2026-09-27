@@ -76,3 +76,28 @@ http://localhost:3000 を開いて確認してください。
 - Googleのアクセストークンは約1時間で切れますが、Netlify Functionで自動更新するので普段は意識しなくて大丈夫です
 - カレンダー連携の状態（トークン）はこのブラウザだけに保存されます。別の端末で使う場合は、その端末でも「Googleカレンダー連携」を押してログインしてください
 - 同期するのは「期限（日付）が入っているタスク」だけです。時刻まで入っていれば30分の予定、日付だけなら終日予定になります
+
+## 追加した3つの機能（今回分）
+
+### 1. 入力中の一時保存（ドラフト）
+自動で有効。特別な設定は不要です。
+
+### 2. 部屋の中の「日記型」記録（ログ）
+`supabase-schema-log.sql` をSupabaseのSQL Editorで実行してください。
+
+### 3. リマインダー通知（プッシュ通知）
+
+**データベース**: `supabase-schema-push.sql` をSupabaseのSQL Editorで実行してください。
+
+**Netlifyの環境変数に、以下の2つを追加してください**:
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` = `BILRSjCUuHQfHlw92HHiO7tDvJtVo_5dNhamiYh5CYk0yru_s7TCtnhTC246Ha4tKfbg0hVCLt9bK_sV6LiW5_0`
+- `VAPID_PRIVATE_KEY` = `OA29uiDwBMm0vRr5PIqyY_-bepLlBhT8AyZHORokMfk`
+
+（この2つは今回だけこちらで生成した「このアプリ専用の鍵」です。VAPID_PRIVATE_KEYの方は外部に見せない値なので、Netlifyの環境変数にだけ設定してください）
+
+**使い方**:
+1. ヘッダーのベルのアイコンを押すと、ブラウザから通知の許可を求められるので「許可」する
+2. 期限が「今日」または「明日」の予定・タスクがあると、1日2回（リヤドの朝／東京の朝にそれぞれ近い時間）自動でチェックされ、通知が届く
+3. もう一度ベルのアイコンを押すと、通知をオフにできる
+
+**注意**: Netlify Scheduled Functions（定期実行）は無料プランでも使えますが、Netlifyのクレジットを使う機能の一つです。動かない場合はクレジットの残量も確認してください。

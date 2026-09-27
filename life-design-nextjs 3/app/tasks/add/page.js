@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROOMS, roomsByCountry } from "@/lib/rooms";
 import { createTask, updateTaskFields, fetchTasks, fetchRoomItems } from "@/lib/data";
+import { useDraft, clearDraft } from "@/lib/useDraft";
 
 export default function TaskAddPage() {
   return (
@@ -53,6 +54,22 @@ function TaskAddForm() {
     fetchRoomItems(roomId).then(setRoomItems);
   }, [roomId]);
 
+  const DRAFT_KEY = "life-design-draft-task-add";
+  useDraft(
+    DRAFT_KEY,
+    { kind, text, roomId, relatedItemId, dueDate, dueTime, url },
+    (draft) => {
+      if (draft.kind) setKind(draft.kind);
+      if (draft.text) setText(draft.text);
+      if (draft.roomId) setRoomId(draft.roomId);
+      if (draft.relatedItemId) setRelatedItemId(draft.relatedItemId);
+      if (draft.dueDate) setDueDate(draft.dueDate);
+      if (draft.dueTime) setDueTime(draft.dueTime);
+      if (draft.url) setUrl(draft.url);
+    },
+    { skip: !!editId }
+  );
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!text.trim()) return;
@@ -86,6 +103,7 @@ function TaskAddForm() {
         setText("");
         setUrl("");
         setDueTime("");
+        clearDraft(DRAFT_KEY);
         setFeedback(`「${fields.text}」を${KIND_LABEL[kind]}として追加しました。`);
       }
     } catch (err) {

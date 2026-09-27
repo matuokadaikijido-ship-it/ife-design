@@ -24,6 +24,10 @@ export default function SpriteIcons() {
       <symbol id="i-paperclip" viewBox="0 0 24 24">
         <path d="M7 12.5 14 5.6a3 3 0 0 1 4.3 4.3l-8 8a1.8 1.8 0 0 1-2.6-2.6l7-7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
       </symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24">
+        <path d="M6 10a6 6 0 0 1 12 0v4.2l1.6 2.6H4.4L6 14.2V10z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </symbol>
     </svg>
   );
 }

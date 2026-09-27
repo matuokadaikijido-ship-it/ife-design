@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRegion } from "./RegionProvider";
 import { signInWithGoogle, captureTokensFromSession, watchGoogleAuthState, isGoogleConnected, disconnectGoogle } from "@/lib/googleAuth";
+import { isPushSupported, isPushEnabled, enablePushNotifications, disablePushNotifications } from "@/lib/push";
 
 function useClock(timeZone) {
   const [now, setNow] = useState(null);
@@ -26,13 +27,31 @@ export default function Header() {
   const { region, setRegion } = useRegion();
   const [turns, setTurns] = useState(0);
   const [connected, setConnected] = useState(false);
+  const [pushOn, setPushOn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     captureTokensFromSession().then(() => setConnected(isGoogleConnected()));
     const unwatch = watchGoogleAuthState(() => setConnected(true));
+    if (isPushSupported()) isPushEnabled().then(setPushOn);
     return unwatch;
   }, []);
+
+  async function togglePush() {
+    try {
+      if (pushOn) {
+        if (confirm("通知をオフにしますか？")) {
+          await disablePushNotifications();
+          setPushOn(false);
+        }
+      } else {
+        await enablePushNotifications();
+        setPushOn(true);
+      }
+    } catch (err) {
+      alert(err.message || "通知の設定に失敗しました。");
+    }
+  }
 
   return (
     <header className="masthead">
@@ -82,6 +101,17 @@ export default function Header() {
             }}
           >
             {connected ? "カレンダー連携ずみ" : "Googleカレンダー連携"}
+          </button>
+          <button
+            type="button"
+            className={"header-btn header-btn--icon" + (pushOn ? " is-active" : "")}
+            onClick={togglePush}
+            aria-label={pushOn ? "通知をオフにする" : "リマインダー通知をオンにする"}
+            title={pushOn ? "通知オン" : "通知オフ"}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <use href="#i-bell" />
+            </svg>
           </button>
         </div>
 

@@ -7,6 +7,7 @@ import { ROOMS, COUNTRY_LABEL, COUNTRY_ACCENT } from "@/lib/rooms";
 import { fetchRoomItems, fetchTasks, updateTaskFields, deleteTaskById } from "@/lib/data";
 import ItemList from "@/components/ItemList";
 import TaskList from "@/components/TaskList";
+import RoomLog from "@/components/RoomLog";
 
 export default function RoomPageClient({ roomId }) {
   const meta = ROOMS[roomId];
@@ -60,7 +61,11 @@ export default function RoomPageClient({ roomId }) {
           </Link>
         </div>
 
-        {!loading && <ItemList items={items} />}
+        {!loading && <ItemList items={items.filter((i) => i.entry_type !== "log")} />}
+
+        {!loading && (
+          <RoomLog roomId={roomId} logs={items.filter((i) => i.entry_type === "log")} onChanged={refresh} />
+        )}
 
         {roomId !== "quick-memo" && (
           <div className="page__tasks">

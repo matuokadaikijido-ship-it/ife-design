@@ -118,12 +118,22 @@ export async function createRoomItem(roomId, fields, file) {
       title: fields.title,
       notes: fields.notes || null,
       url: fields.url || null,
+      entry_type: fields.entryType || "item",
       ...attachment,
     })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+// 部屋の中の「日記型」記録：日付ごとの一言メモ。項目とは別に、時系列で積み上げていく。
+export async function createRoomLog(roomId, text) {
+  return createRoomItem(roomId, { title: text, entryType: "log" });
+}
+
+export async function deleteRoomLog(id) {
+  return deleteRoomItem(id);
 }
 
 export async function updateRoomItem(id, fields, file, removeAttachment) {
