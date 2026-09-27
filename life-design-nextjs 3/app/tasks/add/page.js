@@ -64,27 +64,35 @@ function TaskAddForm() {
       roomId: roomId || null,
       relatedItemId: relatedItemId || null,
       dueDate: dueDate || null,
-      dueTime: kind === "event" ? dueTime || null : null,
+      dueTime: dueTime || null,
       url: url.trim(),
     };
 
-    if (editId) {
-      await updateTaskFields(editId, {
-        text: fields.text,
-        kind: fields.kind,
-        room_id: fields.roomId,
-        related_item_id: fields.relatedItemId,
-        due_date: fields.dueDate,
-        due_time: fields.dueTime,
-        url: fields.url,
-      });
-      router.push(`/tasks/view?id=${editId}`);
-    } else {
-      await createTask(fields);
-      setText("");
-      setUrl("");
-      setDueTime("");
-      setFeedback(`「${fields.text}」を${KIND_LABEL[kind]}として追加しました。`);
+    setFeedback("");
+    try {
+      if (editId) {
+        await updateTaskFields(editId, {
+          text: fields.text,
+          kind: fields.kind,
+          room_id: fields.roomId,
+          related_item_id: fields.relatedItemId,
+          due_date: fields.dueDate,
+          due_time: fields.dueTime,
+          url: fields.url,
+        });
+        router.push(`/tasks/view?id=${editId}`);
+      } else {
+        await createTask(fields);
+        setText("");
+        setUrl("");
+        setDueTime("");
+        setFeedback(`「${fields.text}」を${KIND_LABEL[kind]}として追加しました。`);
+      }
+    } catch (err) {
+      console.error("タスクの保存に失敗しました", err);
+      setFeedback(
+        "保存に失敗しました。データベースの設定（kind列の追加など）がまだの可能性があります。少し時間をおいて、もう一度お試しください。"
+      );
     }
   }
 
@@ -165,9 +173,7 @@ function TaskAddForm() {
               placeholder={kind === "task" ? "期限（任意）" : undefined}
               required={kind === "event"}
             />
-            {kind === "event" && (
-              <input type="time" className="quickpin__input" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
-            )}
+            <input type="time" className="quickpin__input" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
           </div>
           <input
             type="url"
